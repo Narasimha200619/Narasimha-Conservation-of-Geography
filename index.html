@@ -1,0 +1,349 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Conservation Geography Quiz</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f5f5f5;font-family:Arial,sans-serif;color:#253044}
+header{
+ background:linear-gradient(110deg,#4210f5,#087dff,#08b9e9);
+ color:white;text-align:center;padding:25px 12px;
+ box-shadow:0 4px 12px #00c9e855
+}
+header h1{margin:8px 0;font-size:clamp(25px,4vw,40px)}
+header p{margin:9px 0;font-size:17px}
+main{max-width:1050px;margin:38px auto;padding:0 16px}
+.card{background:white;border-radius:16px;padding:30px;
+ box-shadow:0 8px 24px #00000012;margin-bottom:22px}
+.center{text-align:center}
+h2{color:#174e69}
+.sub{color:#64748b;font-size:18px;line-height:1.6}
+button,select{font:inherit;border-radius:9px;padding:13px 17px}
+button{cursor:pointer;border:1px solid #ccd2d8;background:#f0f7f4}
+button:hover{filter:brightness(.96)}
+button:disabled{cursor:not-allowed;opacity:.6}
+.primary{background:#159875;color:white;border:0;font-weight:bold;
+ border-radius:40px;padding:17px 38px;box-shadow:0 4px 12px #15987544}
+.choices{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
+.choice{min-width:75px}
+.choice.active{background:#159875;color:white;border-color:#159875}
+.field{display:block;max-width:420px;width:100%;margin:12px auto}
+select{width:100%;background:white;border:1px solid #cbd5e1}
+.hidden{display:none!important}
+.progress{height:10px;background:#e4e4e4;border-radius:10px;overflow:hidden}
+#progressBar{height:100%;width:0;background:#159875;transition:width .2s}
+.topline{display:flex;justify-content:space-between;gap:12px;
+ color:#a0a6ae;font-size:14px;margin:20px 0 28px}
+#question{font-size:24px;line-height:1.5;margin:25px 0}
+.answers{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.answer{text-align:left;min-height:62px;background:#f7f8fa;
+ border:2px solid #ddd;color:#172033}
+.answer.selected{border-color:#2879ed;background:#eaf2ff}
+.answer.correct{border-color:#159875;background:#dcfce7;color:#166534}
+.answer.wrong{border-color:#dc2626;background:#fee2e2;color:#991b1b}
+.actions{display:flex;justify-content:space-between;gap:12px;
+ flex-wrap:wrap;margin-top:26px}
+#feedback{font-weight:bold;line-height:1.6;margin-top:18px}
+.hint{color:#6b7280;background:#f8fafc;padding:12px;border-radius:8px}
+.stats{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.stat{background:#f0f7f4;padding:17px;border-radius:10px;min-width:140px}
+.stat strong{display:block;font-size:26px;color:#159875;margin-top:7px}
+.review-item{padding:15px 0;border-bottom:1px solid #e5e7eb;line-height:1.6}
+footer{text-align:center;color:#64748b;padding:20px}
+@media(max-width:600px){
+ .card{padding:20px}
+ .answers{grid-template-columns:1fr}
+ #question{font-size:20px}
+ .actions button{flex:1}
+}
+</style>
+</head>
+<body>
+<header>
+ <h1>Conservation Geography Quiz</h1>
+ <p>Note: If your answer is wrong, the correct answer will be shown below.</p>
+ <p><b>Hint:</b> Click "Need a Hint?" if you don't know the answer.</p>
+</header>
+
+<main>
+<!-- HOME -->
+<section id="home" class="card center">
+ <h2>Welcome to Conservation Geography Quiz</h2>
+ <p class="sub">Practice assessment questions on Conservation Geography</p>
+ <h3>Choose your practice mode</h3>
+ <div class="choices">
+  <button class="primary" onclick="showMode('weekly')">Week-wise Practice</button>
+  <button class="primary" onclick="showMode('random')">Random Practice</button>
+ </div>
+</section>
+
+<!-- WEEK SELECTION -->
+<section id="weekly" class="card center hidden">
+ <h2>Week-wise Practice</h2>
+ <p class="sub">Choose a week to practise its 10 questions.</p>
+ <label class="field">Select Week
+  <select id="weekSelect"></select>
+ </label>
+ <div class="actions">
+  <button onclick="goHome()">Back</button>
+  <button class="primary" onclick="startWeekly()">Start Week</button>
+ </div>
+</section>
+
+<!-- RANDOM SELECTION -->
+<section id="random" class="card center hidden">
+ <h2>Random Practice</h2>
+ <p class="sub">Questions are selected randomly from all 12 weeks.</p>
+ <h3>How many questions?</h3>
+ <div class="choices">
+  <button class="choice active" data-count="10" onclick="selectCount(10)">10</button>
+  <button class="choice" data-count="20" onclick="selectCount(20)">20</button>
+  <button class="choice" data-count="50" onclick="selectCount(50)">50</button>
+  <button class="choice" data-count="120" onclick="selectCount(120)">All (120)</button>
+ </div>
+ <div class="actions">
+  <button onclick="goHome()">Back</button>
+  <button class="primary" onclick="startRandom()">Start Quiz</button>
+ </div>
+</section>
+
+<!-- QUIZ -->
+<section id="quiz" class="card hidden">
+ <div class="progress"><div id="progressBar"></div></div>
+ <div class="topline">
+  <span id="modeLabel">Random Practice</span>
+  <span id="questionNumber">Question 1 of 10</span>
+ </div>
+ <h2 id="question"></h2>
+ <div id="answers" class="answers"></div>
+ <div id="hint" class="hint hidden"></div>
+ <div id="feedback" aria-live="polite"></div>
+ <div class="actions">
+  <button onclick="needHint()">Need a Hint?</button>
+  <button id="submitBtn" class="primary" onclick="submitAnswer()" disabled>Submit Answer</button>
+  <button id="nextBtn" class="primary hidden" onclick="nextQuestion()">Next →</button>
+ </div>
+</section>
+
+<!-- RESULTS -->
+<section id="results" class="card center hidden">
+ <h2>Quiz Completed!</h2>
+ <p class="sub">Here is your performance.</p>
+ <div class="stats">
+  <div class="stat">Total Questions<strong id="totalResult">0</strong></div>
+  <div class="stat">Correct Answers<strong id="correctResult">0</strong></div>
+  <div class="stat">Incorrect Answers<strong id="wrongResult">0</strong></div>
+  <div class="stat">Percentage<strong id="percentResult">0%</strong></div>
+ </div>
+ <div class="actions">
+  <button onclick="reviewAnswers()">Review Answers</button>
+  <button class="primary" onclick="restartQuiz()">Try Again</button>
+  <button onclick="goHome()">Home</button>
+ </div>
+ <div id="review" class="hidden" style="text-align:left;margin-top:25px"></div>
+</section>
+</main>
+<footer>Conservation Geography · NPTEL Practice</footer>
+
+<script>
+/*
+QUESTION BANK FORMAT:
+{
+ week: 1,
+ question: "Your question",
+ options: ["Option A","Option B","Option C","Option D"],
+ answer: 1,
+ hint: "Optional hint"
+}
+
+IMPORTANT:
+Add all 10 questions from each PDF to QUESTION_BANK.
+Answer index: A=0, B=1, C=2, D=3.
+Use the highlighted answer in your PDF for the answer index.
+*/
+
+const QUESTION_BANK = [
+ {week:1,question:"The regular, seasonal movement of animals, often along fixed routes is called:",options:["Translocation","Migration","Dispersal","Drifting"],answer:1,hint:"Animals move seasonally along established routes."},
+ {week:1,question:"The systematic approach to Geography was developed by:",options:["Alexander von Humboldt","Karl Ritter","Rene Descartes","Eratosthenes"],answer:0,hint:"He was a German naturalist and geographer."},
+ {week:1,question:"I tried growing vegetables under my teak plantation, but the vegetable plants died out. I should be concerned about:",options:["Autophagy","Allelophagy","Autopathy","Allelopathy"],answer:3,hint:"Some plants release chemicals that affect other plants."},
+ {week:1,question:"A lake still exists physically, but sewage and plastic waste reduce the number of fish it can support. This is best called:",options:["Habitat degradation","Habitat fragmentation","Jump dispersal","Secular dispersal"],answer:0,hint:"The habitat remains but its quality declines."},
+ {week:1,question:"“Science of relationships between organisms and their environments” is the definition of:",options:["Conservation","Preservation","Environmentalism","Ecology"],answer:3,hint:"This branch studies organisms and their environment."},
+ {week:1,question:"The rate of a biological process is limited by the factor in least amount relative to requirement. This is:",options:["Liebig’s law of the minimum","Liebig’s law of the maximum","Shelford’s law of tolerance","Shelford’s law of intolerance"],answer:0,hint:"Think of the scarcest required resource."},
+ {week:1,question:"In the word root for conservation, con stands for:",options:["Together","To keep","House","Manage"],answer:0,hint:"It means together."},
+ {week:1,question:"In the word root for conservation, servare stands for:",options:["Together","To keep","House","Manage"],answer:1,hint:"It refers to keeping or preserving."},
+ {week:1,question:"The geographical discipline of Climatology is most closely related to:",options:["Geology","Meteorology","Hydrology","Pedology"],answer:1,hint:"It studies the atmosphere and weather processes."},
+ {week:1,question:"Good climate is a:",options:["Chemical factor","Demographic factor","Push factor","Pull factor"],answer:3,hint:"It attracts people to a location."},
+
+ {week:2,question:"Mount Fuji is an example of:",options:["Shield volcano","Stratovolcano","Caldera","Flood basalt province"],answer:1,hint:"It is a steep-sided composite volcano."},
+ {week:2,question:"The main source of magma is the:",options:["Crust","Mantle","Outer core","Inner core"],answer:1,hint:"It lies beneath Earth's crust."},
+ {week:2,question:"Which of these is not a method of absolute dating?",options:["Radioisotope dating","Thermoluminescence dating","Inclusion study","Fission track dating"],answer:2,hint:"This is a relative dating principle."},
+ {week:2,question:"What are planetesimals?",options:["Fully formed gas giants","Fragments of continental crust","Small bodies formed from gas and dust that can accrete into planets","Layers of volcanic ash within a mountain"],answer:2,hint:"They are building blocks of planets."},
+ {week:2,question:"Hawaiian volcanoes are an example of:",options:["Shield volcano","Stratovolcano","Caldera","Flood basalt province"],answer:0,hint:"They have broad slopes and fluid lava."},
+ {week:2,question:"Which of these is true about P waves?",options:["They are longitudinal in nature","They are transverse in nature","They cannot move through gases","They cannot move through liquids"],answer:0,hint:"They are compressional seismic waves."},
+ {week:2,question:"Fossil assemblages unique to the time they lived in are used to age rocks. This is the:",options:["Principle of fossil succession","Principle of original horizontality","Principle of superposition","Principle of cross-cutting relationships"],answer:0,hint:"Fossil types succeed one another through geological time."},
+ {week:2,question:"Which set contains only terrestrial planets?",options:["Jupiter, Saturn, Uranus, Neptune","Earth, Jupiter, Mars, Saturn","Mercury, Venus, Uranus, Neptune","Mercury, Venus, Earth, Mars"],answer:3,hint:"These are the four rocky inner planets."},
+ {week:2,question:"Strata are laterally continuous within a depositional basin. This is the:",options:["Principle of superposition","Principle of original horizontality","Principle of lateral continuity","Principle of inclusions"],answer:2,hint:"The name describes layers extending sideways."},
+ {week:2,question:"Deccan Traps are an example of:",options:["Shield volcano","Stratovolcano","Caldera","Flood basalt province"],answer:3,hint:"They formed from extensive lava flows."}
+];
+
+/*
+Add the remaining questions from Weeks 3–12 here using the same format.
+The question screen automatically uses the questions present in QUESTION_BANK.
+Do not publish until all 120 questions and their PDF-highlighted answers are entered.
+*/
+
+let mode="random",selectedCount=10,quizQuestions=[],current=0,selected=null;
+let responses=[],hintUsed=false;
+
+const $=id=>document.getElementById(id);
+const screens=["home","weekly","random","quiz","results"];
+
+function showScreen(id){
+ screens.forEach(s=>$(s).classList.toggle("hidden",s!==id));
+ window.scrollTo({top:0,behavior:"smooth"});
+}
+function goHome(){showScreen("home")}
+function showMode(m){mode=m;showScreen(m)}
+function selectCount(n){
+ selectedCount=n;
+ document.querySelectorAll("[data-count]").forEach(b=>
+  b.classList.toggle("active",Number(b.dataset.count)===n));
+}
+function initWeeks(){
+ for(let i=1;i<=12;i++){
+  const op=document.createElement("option");
+  op.value=i;op.textContent="Week "+i;
+  $("weekSelect").appendChild(op);
+ }
+}
+function shuffle(arr){
+ for(let i=arr.length-1;i>0;i--){
+  let j=Math.floor(Math.random()*(i+1));
+  [arr[i],arr[j]]=[arr[j],arr[i]];
+ }
+ return arr;
+}
+function startWeekly(){
+ const w=Number($("weekSelect").value);
+ const all=QUESTION_BANK.filter(q=>q.week===w);
+ if(all.length!==10){
+  alert("Week "+w+" currently has "+all.length+" questions in the code. Add all 10 questions from its PDF before starting this week.");
+  return;
+ }
+ quizQuestions=all.map(q=>({...q}));
+ beginQuiz("Week "+w+" Practice");
+}
+function startRandom(){
+ if(QUESTION_BANK.length<120 && selectedCount>QUESTION_BANK.length){
+  alert("The question bank currently contains "+QUESTION_BANK.length+" questions. Add the remaining questions from Weeks 3–12 before selecting "+selectedCount+".");
+  return;
+ }
+ quizQuestions=shuffle([...QUESTION_BANK]).slice(0,selectedCount);
+ beginQuiz("Random Practice");
+}
+function beginQuiz(label){
+ current=0;selected=null;responses=quizQuestions.map(()=>null);
+ $("modeLabel").textContent=label;
+ showScreen("quiz");renderQuestion();
+}
+function renderQuestion(){
+ const q=quizQuestions[current];
+ selected=responses[current]?.choice ?? null;
+ hintUsed=false;
+ $("hint").classList.add("hidden");
+ $("hint").textContent="";
+ $("feedback").textContent="";
+ $("nextBtn").classList.add("hidden");
+ $("submitBtn").classList.remove("hidden");
+ $("submitBtn").disabled=selected===null;
+ $("questionNumber").textContent=`Question ${current+1} of ${quizQuestions.length}`;
+ $("progressBar").style.width=(current/quizQuestions.length*100)+"%";
+ $("question").textContent=q.question;
+ $("answers").innerHTML="";
+ q.options.forEach((opt,i)=>{
+  const b=document.createElement("button");
+  b.className="answer"+(selected===i?" selected":"");
+  b.textContent=String.fromCharCode(65+i)+". "+opt;
+  b.onclick=()=>{
+   if(responses[current]?.submitted)return;
+   selected=i;
+   [...$("answers").children].forEach(x=>x.classList.remove("selected"));
+   b.classList.add("selected");
+   $("submitBtn").disabled=false;
+  };
+  $("answers").appendChild(b);
+ });
+ if(responses[current]?.submitted)showFeedback();
+}
+function submitAnswer(){
+ if(selected===null)return;
+ responses[current]={choice:selected,submitted:true};
+ showFeedback();
+}
+function showFeedback(){
+ const q=quizQuestions[current],r=responses[current];
+ [...$("answers").children].forEach((b,i)=>{
+  b.disabled=true;
+  if(i===q.answer)b.classList.add("correct");
+  if(i===r.choice&&i!==q.answer)b.classList.add("wrong");
+ });
+ $("submitBtn").classList.add("hidden");
+ $("nextBtn").classList.remove("hidden");
+ $("nextBtn").textContent=current===quizQuestions.length-1?"See Results →":"Next →";
+ $("feedback").textContent=r.choice===q.answer
+  ?"✓ Correct answer!"
+  :"✗ Incorrect. Correct answer: "+q.options[q.answer];
+ $("progressBar").style.width=((current+1)/quizQuestions.length*100)+"%";
+}
+function needHint(){
+ const q=quizQuestions[current];
+ $("hint").textContent=q.hint||"Review the question and think about the key concept.";
+ $("hint").classList.remove("hidden");
+ hintUsed=true;
+}
+function nextQuestion(){
+ if(current<quizQuestions.length-1){current++;renderQuestion()}
+ else finishQuiz();
+}
+function finishQuiz(){
+ const correct=responses.filter((r,i)=>r&&r.choice===quizQuestions[i].answer).length;
+ const total=quizQuestions.length;
+ $("totalResult").textContent=total;
+ $("correctResult").textContent=correct;
+ $("wrongResult").textContent=total-correct;
+ $("percentResult").textContent=Math.round(correct/total*100)+"%";
+ $("review").classList.add("hidden");
+ showScreen("results");
+}
+function reviewAnswers(){
+ const el=$("review");
+ el.innerHTML="<h3>Answer Review</h3>";
+ quizQuestions.forEach((q,i)=>{
+  const r=responses[i];
+  const div=document.createElement("div");
+  div.className="review-item";
+  const title=document.createElement("strong");
+  title.textContent=(i+1)+". "+q.question;
+  div.appendChild(title);
+  const your=document.createElement("p");
+  your.textContent="Your answer: "+(r?q.options[r.choice]:"Not answered");
+  div.appendChild(your);
+  const correct=document.createElement("p");
+  correct.style.color="#087f5b";
+  correct.textContent="Correct answer: "+q.options[q.answer];
+  div.appendChild(correct);
+  el.appendChild(div);
+ });
+ el.classList.remove("hidden");
+}
+function restartQuiz(){
+ if(mode==="weekly")startWeekly();
+ else startRandom();
+}
+initWeeks();
+</script>
+</body>
+</html>
